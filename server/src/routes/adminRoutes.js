@@ -1,0 +1,160 @@
+import { Router } from "express";
+// ADDED: Raw audio upload parser and room music endpoint handlers.
+import express from "express";
+import { controlRoomMusic, getMusicLibrary, selectRoomMusic, uploadRoomMusic } from "../controllers/musicController.js";
+
+import {
+    getAdminDashboard,
+    getAdminTickets,
+    generateAdminTickets,
+    getAdminBookings,
+    getAdminPayments,
+    getAdminRoom,
+    createRoom,
+    approveManualPayment,
+    rejectManualPayment,
+} from "../controllers/adminController.js";
+
+import {
+    resetRoom,
+    startRoom,
+    pauseRoom,
+    terminateRoom,
+    drawRoomBall,
+} from "../controllers/roomController.js";
+
+import {
+    getAdminClaims,
+    verifyClaim,
+    rejectClaim,
+} from "../controllers/ClaimController.js";
+
+import {
+    requireAuth,
+} from "../utils/auth.js";
+
+import {
+    requireAdmin,
+} from "../utils/adminAuth.js";
+
+const router = Router();
+
+router.use(
+    requireAuth,
+    requireAdmin
+);
+
+// ADDED: These routes remain protected by the router-level admin authentication above.
+router.post(
+    "/music/upload",
+    express.raw({ type: "application/octet-stream", limit: "25mb" }),
+    uploadRoomMusic,
+);
+
+router.post(
+    "/music/control",
+    controlRoomMusic,
+);
+
+// ADDED: Admin music-library browse and track-selection APIs.
+router.get("/music/library", getMusicLibrary);
+router.post("/music/select", selectRoomMusic);
+
+// Dashboard
+router.get(
+    "/dashboard",
+    getAdminDashboard
+);
+
+// Rooms
+router.get(
+    "/rooms/:roomCode",
+    getAdminRoom
+);
+
+router.post(
+    "/rooms",
+    createRoom
+);
+
+router.post(
+    "/rooms/:roomCode/start",
+    startRoom
+);
+
+router.post(
+    "/rooms/:roomCode/pause",
+    pauseRoom
+);
+
+router.post(
+    "/rooms/:roomCode/terminate",
+    terminateRoom
+);
+
+router.post(
+    "/rooms/:roomCode/reset",
+    resetRoom
+);
+
+router.post(
+    "/rooms/:roomCode/draw",
+    drawRoomBall
+);
+
+// Tickets
+router.get(
+    "/tickets",
+    getAdminTickets
+);
+
+router.post(
+    "/tickets/generate",
+    generateAdminTickets
+);
+
+// Bookings
+router.get(
+    "/bookings",
+    getAdminBookings
+);
+
+// Payments
+router.get(
+    "/payments",
+    getAdminPayments
+);
+
+// Prize claims
+router.get(
+    "/rooms/:roomCode/claims",
+    getAdminClaims
+);
+
+// CHANGED: Older deployed clients may still call /admin/room/:roomCode/claims
+// (singular). Keep that URL working while /rooms/ remains the canonical route.
+router.get(
+    "/room/:roomCode/claims",
+    getAdminClaims
+);
+
+router.post(
+    "/claims/:claimId/verify",
+    verifyClaim
+);
+
+router.post(
+    "/claims/:claimId/reject",
+    rejectClaim
+);
+router.post(
+    "/payments/:reference/approve",
+    approveManualPayment,
+);
+
+router.post(
+    "/payments/:reference/reject",
+    rejectManualPayment,
+);
+
+export default router;
